@@ -2,9 +2,13 @@ package cmd
 
 import (
 	"embed"
+	"io"
 	"log"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/go-batteries/bananas"
 	"github.com/spf13/cobra"
@@ -108,6 +112,14 @@ func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
 		log.Println("setting up base done..")
 	}
 
+	{
+		// Setup Required Protos
+		err := r.setupRequiredProtos()
+		if err != nil {
+			log.Fatal("project setup failed for", appName, "reason:", err)
+		}
+	}
+
 	log.Printf("\nInitialized a new Bananas app %s in '%s' mode.\n", appName, mode)
 }
 
@@ -192,4 +204,133 @@ func (r appInitRunner) copyTemplates(projectName, mode string) {
 		}
 	}
 
+}
+
+func (r appInitRunner) setupRequiredProtos() error {
+	googleApiDirRoot := "protos/includes/googleapis"
+	grpcEcosystemDirRoot := "protos/includes/grpc_ecosystem/protoc-gen-openapiv2"
+
+	// Create directories
+	err := os.MkdirAll(filepath.Join(googleApiDirRoot, "google/api"), os.ModePerm)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(filepath.Join(googleApiDirRoot, "google/protobuf"), os.ModePerm)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(filepath.Join(grpcEcosystemDirRoot, "options"), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	// Download proto files using HTTP
+	var protos = []struct {
+		url  string
+		path string
+	}{
+		{
+			url:  "https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/http.proto",
+			path: filepath.Join(googleApiDirRoot, "google/api/http.proto"),
+		},
+		{
+			url:  "https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/annotations.proto",
+			path: filepath.Join(googleApiDirRoot, "google/api/annotations.proto"),
+		},
+		{
+			url:  "https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf/descriptor.proto",
+			path: filepath.Join(googleApiDirRoot, "google/protobuf/descriptor.proto"),
+		},
+		{
+			url:  "https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf/struct.proto",
+			path: filepath.Join(googleApiDirRoot, "google/protobuf/struct.proto"),
+		},
+		{
+			url:  "https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/protoc-gen-openapiv2/options/annotations.proto",
+			path: filepath.Join(grpcEcosystemDirRoot, "options/annotations.proto"),
+		},
+		{
+			url:  "https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/protoc-gen-openapiv2/options/openapiv2.proto",
+			path: filepath.Join(grpcEcosystemDirRoot, "options/openapiv2.proto"),
+		},
+	}
+
+	var wg = sync.WaitGroup{}
+	wg.Add(len(protos))
+
+	for i := 0; i < len(protos); i++ {
+		go func(_wg *sync.WaitGroup, idx int) {
+			defer _wg.Done()
+
+			proto := protos[idx]
+
+			err := downloadProtoFile(proto.url, proto.path)
+			if err != nil {
+				log.Println("failed to download protos from", proto.url)
+			}
+		}(&wg, i)
+	}
+
+	wg.Wait()
+	// err = downloadProtoFile("https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/http.proto", filepath.Join(googleApiDirRoot, "google/api/http.proto"))
+	// if err != nil {
+	// 	return err
+	// }
+	//
+	// err = downloadProtoFile("https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/annotations.proto", filepath.Join(googleApiDirRoot, "google/api/annotations.proto"))
+	// if err != nil {
+	// 	return err
+	// }
+
+	// err = downloadProtoFile("https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf/descriptor.proto", filepath.Join(googleApiDirRoot, "google/protobuf/descriptor.proto"))
+	// if err != nil {
+	// 	return err
+	// }
+
+	// err = downloadProtoFile("https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf/struct.proto", filepath.Join(googleApiDirRoot, "google/protobuf/struct.proto"))
+	// if err != nil {
+	// 	return err
+	// }
+
+	// err = downloadProtoFile("https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/protoc-gen-openapiv2/options/annotations.proto", filepath.Join(grpcEcosystemDirRoot, "options/annotations.proto"))
+	// if err != nil {
+	// 	return err
+	// }
+
+	// err = downloadProtoFile("https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/protoc-gen-openapiv2/options/openapiv2.proto", filepath.Join(grpcEcosystemDirRoot, "options/openapiv2.proto"))
+	// if err != nil {
+	// 	return err
+	// }
+
+	return nil
+}
+
+func downloadProtoFile(url, outputPath string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Fatalf("failed to download %s: %v", url, err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("failed to download %s: server returned %d", url, resp.StatusCode)
+		return err
+	}
+
+	outFile, err := os.Create(outputPath)
+	if err != nil {
+		log.Fatalf("failed to create file %s: %v", outputPath, err)
+		return err
+	}
+	defer outFile.Close()
+
+	_, err = io.Copy(outFile, resp.Body)
+	if err != nil {
+		log.Fatalf("failed to save file %s: %v", outputPath, err)
+		return err
+	}
+
+	log.Printf("downloaded %s to %s\n", url, outputPath)
+	return nil
 }
