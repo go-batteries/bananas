@@ -27,6 +27,13 @@ func NewGenApiCmd() *cobra.Command {
 		"Immutable!! Path to proto definitions directory",
 	)
 
+	controllerCmd.Flags().StringP(
+		"out_path",
+		"o",
+		"./app/core",
+		"Output path for compiled proto definitions",
+	)
+
 	controllerCmd.Flags().BoolP(
 		"grpc",
 		"",
@@ -48,6 +55,17 @@ func (r genApiRunner) generateApiCode(cmd *cobra.Command, args []string) {
 	// 	log.Fatalln("path is required.")
 	// }
 
+	outPath, err := cmd.Flags().GetString("out_path")
+	if err != nil {
+		cmd.Usage()
+		log.Fatalln("failed to get path from options. reason:", err)
+	}
+
+	if outPath == "" {
+		cmd.Usage()
+		log.Fatalln("out_path is required.")
+	}
+
 	path := "./protos/web"
 
 	isgRPCMode, err := cmd.Flags().GetBool("grpc")
@@ -55,7 +73,7 @@ func (r genApiRunner) generateApiCode(cmd *cobra.Command, args []string) {
 		isgRPCMode = false
 	}
 
-	err = r.genWebProto(strings.TrimSuffix(path, "/"), isgRPCMode)
+	err = r.genWebProto(strings.TrimSuffix(path, "/"), outPath, isgRPCMode)
 	if err != nil {
 		log.Fatalln("failed to generate pb go files. reason:", err)
 	}
@@ -63,7 +81,7 @@ func (r genApiRunner) generateApiCode(cmd *cobra.Command, args []string) {
 	log.Println("generated pb files")
 }
 
-func (r genApiRunner) buildArgs(protosPath string, isgRPCMode bool) []string {
+func (r genApiRunner) buildArgs(protosPath string, overrideOutPath string, isgRPCMode bool) []string {
 	protoFiles, err := filepath.Glob(fmt.Sprintf("%s/**/*.proto", protosPath))
 	if err != nil {
 		log.Println("failed to find .proto files. reason:", err)
@@ -74,7 +92,7 @@ func (r genApiRunner) buildArgs(protosPath string, isgRPCMode bool) []string {
 		return []string{}
 	}
 
-	outPath, err := filepath.Abs("./app/core")
+	outPath, err := filepath.Abs(overrideOutPath)
 	if err != nil {
 		log.Fatal("failed to find directory, init first")
 	}
@@ -98,8 +116,8 @@ func (r genApiRunner) buildArgs(protosPath string, isgRPCMode bool) []string {
 	return args
 }
 
-func (r genApiRunner) genWebProto(protosPath string, isgRPCMode bool) error {
-	cliArgs := r.buildArgs(protosPath, isgRPCMode)
+func (r genApiRunner) genWebProto(protosPath string, outPath string, isgRPCMode bool) error {
+	cliArgs := r.buildArgs(protosPath, outPath, isgRPCMode)
 	log.Println("protoc", strings.Join(cliArgs, " "))
 
 	return Execute("protoc", cliArgs...)

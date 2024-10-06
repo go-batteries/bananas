@@ -46,7 +46,7 @@ $> bananas gen:structs
 $> go run cmd/server/main.go
 ```
 
-#### to enable grpc use
+__to enable grpc use__
 
 ```shell
 $> bananas init -n testproj --grpc
@@ -58,6 +58,14 @@ $> bananas gen:docs
 
 $> go run cmd/server/main.go
 ```
+
+__change the compiled proto out path__
+
+```shell
+$> mkdir -b brap/core
+$> bananas gen:structs --grpc --out_path=brap/core
+```
+
 
 _N.B.: The `--path` flag for overriding protos/ directory is off. Will add that later_
 
