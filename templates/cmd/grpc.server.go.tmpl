@@ -151,6 +151,22 @@ func (s *HellowServiceImpl) GetHellow(ctx context.Context, req *protos.HellowGet
 	}
 	return &protos.HellowResponse{
 		Success: true,
+		Data:    fmt.Sprintf("Hi, %s", name),
+		Errors:  nil,
+	}, nil
+}
+
+func (s *HellowServiceImpl) DeleteHellow(ctx context.Context, req *protos.HellowGetRequest) (*protos.HellowResponse, error) {
+	name := req.GetName()
+	if name == "" {
+		return &protos.HellowResponse{
+			Success: false,
+			Data:    "",
+			Errors:  []string{"Name is empty"},
+		}, nil
+	}
+	return &protos.HellowResponse{
+		Success: true,
 		Data:    fmt.Sprintf("Bye, %s", name),
 		Errors:  nil,
 	}, nil

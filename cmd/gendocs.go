@@ -30,7 +30,7 @@ func NewGenDocsCmd() *cobra.Command {
 	docsCmd.Flags().StringP(
 		"path",
 		"p",
-		"protos/web",
+		"./protos/web",
 		"Immutable!! Path to proto definitions directory",
 		// "Name of the controller for which to generate docs",
 	)

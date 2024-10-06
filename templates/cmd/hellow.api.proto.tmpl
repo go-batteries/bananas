@@ -63,4 +63,11 @@ service HellowService {
       get : "/hellow"
     };
   }
+
+  // DeleteHellow handles the DELETE /hellow?name=Name endpoint
+  rpc DeleteHellow(HellowGetRequest) returns (HellowResponse) {
+    option (google.api.http) = {
+      delete : "/hellow"
+    };
+  }
 }
