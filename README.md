@@ -1,9 +1,12 @@
 # bananas
 
+![logo](./logo.jpg)
+
 or maybe I should have called it `go-bananas`. This is a cli tool to setup an
 opinionated golang base project.
 
 The opinion being, write request, response using annotations in `proto` and `service`, and generate
+
 - docs
 - request, response models
 - controllers
