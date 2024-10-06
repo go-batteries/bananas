@@ -36,15 +36,27 @@ Make sure the `bananas` executable is in $PATH.
 $> mkdir -p testproj; cd testproj
 $> go mod init testproj
 $> bananas init -n testproj
-$> go mod tidy
 
-$> cp -r examples/protos/web/hellow protos/web/
-$> bananas gen:docs --path=./protos/web # generates swagger.yaml
+# generates swagger.json
+$> bananas gen:docs 
 
-$> # generate the pb.go files, not fully supported yet in server
-$> bananas gen:structs --path=./protos/web 
+# generate the pb.go files
+$> bananas gen:structs 
 ```
+
+#### to enable grpc use
+
+```shell
+$> bananas init -n testproj --grpc
+
+# from here on, when need to update grpc structs and docs use
+
+$> bananas gen:structs --grpc
+$> bananas gen:docs
+```
+
+_N.B.: The `--path` flag for overriding protos/ directory is off. Will add that later_
 
 ### building
 
-For linux: `make build.cli`
+`make build.cli`
