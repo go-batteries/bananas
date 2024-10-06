@@ -29,7 +29,7 @@ var dirs = []string{
 	"migrations/mysql",
 	"migrations/postgres",
 	"config",
-	"protos",
+	"protos/web",
 	"openapiv2",
 }
 
@@ -135,16 +135,20 @@ func (r appInitRunner) copyTemplates(projectName, mode string) {
 	renderers := map[string]render{
 		"server": {
 			tmplFilePath: "templates/cmd/server.go.tmpl",
-			data:         bananas.TemplData{projectName: projectName},
+			data:         bananas.TemplData{"projectName": projectName},
 			fs:           r.baseFS,
 		},
 		"cli": {
 			tmplFilePath: "templates/cmd/cli.go.tmpl",
 			data: bananas.TemplData{
-				projectName: projectName,
-				binaryName:  binaryName,
+				"projectName": projectName,
+				"binaryName":  binaryName,
 			},
 			fs: r.baseFS,
+		},
+		"tools": {
+			tmplFilePath: "templates/cmd/tools.go.tmpl",
+			fs:           r.baseFS,
 		},
 		"app.env": {
 			tmplFilePath: "templates/cmd/app.env.tmpl",
@@ -240,6 +244,10 @@ func (r appInitRunner) setupRequiredProtos() error {
 		{
 			url:  "https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf/descriptor.proto",
 			path: filepath.Join(googleApiDirRoot, "google/protobuf/descriptor.proto"),
+		},
+		{
+			url:  "https://raw.githubusercontent.com/protocolbuffers/protobuf/refs/heads/main/src/google/protobuf/empty.proto",
+			path: filepath.Join(googleApiDirRoot, "google/protobuf/empty.proto"),
 		},
 		{
 			url:  "https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf/struct.proto",

@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"embed"
-	"html/template"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 )
 
 type TemplData map[string]any

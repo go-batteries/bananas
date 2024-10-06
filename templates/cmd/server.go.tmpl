@@ -70,8 +70,7 @@ func main() {
 			echo.HeaderContentDisposition,
 			echo.HeaderConnection,
 			echo.HeaderCacheControl,
-			ACCESS_TOKEN_HEADER,
-			STREAM_TOKEN_HEADER,
+			// Access Token Headers,
 		},
 		ExposeHeaders: []string{
 			echo.HeaderContentLength,
@@ -80,6 +79,7 @@ func main() {
 			echo.HeaderContentType,
 			echo.HeaderCacheControl,
 			echo.HeaderConnection,
+			// Access Token Headers,
 		},
 	}))
 	srv := &http.Server{

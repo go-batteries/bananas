@@ -22,6 +22,13 @@ func NewGenControllerCmd() *cobra.Command {
 		"Name of the controller",
 	)
 
+	controllerCmd.Flags().StringP(
+		"path",
+		"p",
+		"app/core/controllers",
+		"Path to controllers",
+	)
+
 	return controllerCmd
 }
 
@@ -32,7 +39,7 @@ func generateController(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	controllerDir := filepath.Join("app/controllers", name)
+	controllerDir := filepath.Join("app/core/controllers", name)
 	os.MkdirAll(controllerDir, os.ModePerm)
 
 	// Generate proto files and OpenAPI annotations
