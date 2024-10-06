@@ -138,7 +138,7 @@ func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	log.Printf("\nInitialized a new Bananas app %s in grpc-mode: %v.\n", appName, isgRPCMode)
+	log.Println("grpc enabled", isgRPCMode)
 
 	// Run go mod tidy
 	log.Println("import dependencies")
@@ -153,11 +153,13 @@ func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
 		if err := Execute("bananas", "gen:structs", "--path=./protos/web", "--grpc"); err != nil {
 			log.Fatal("failed to generate proto bufs", err)
 		}
-
-		if err := Execute("bananas", "gen:docs", "--path=./protos/web"); err != nil {
-			log.Fatal("failed to generate openapi json spec", err)
-		}
 	}
+
+	if err := Execute("bananas", "gen:docs", "--path=./protos/web"); err != nil {
+		log.Fatal("failed to generate openapi json spec", err)
+	}
+
+	log.Printf("\nInitialized a new Bananas app %s.\n", appName)
 }
 
 type render struct {
