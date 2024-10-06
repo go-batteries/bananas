@@ -17,7 +17,7 @@ func NewGenApiCmd() *cobra.Command {
 	r := genApiRunner{}
 
 	var controllerCmd = &cobra.Command{
-		Use:   "gen:controllers",
+		Use:   "gen:structs",
 		Short: "Generate all go structs from proto definitions",
 		Run:   r.generateApiCode,
 	}
