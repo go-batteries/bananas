@@ -15,11 +15,21 @@ gen.web.proto:
 		./protos/web/**/*.proto \
 	)
 
-gen.api.proto:
+gen.grpc.proto:
 	( protoc -I protos/web \
 		-I protos/includes/googleapis \
 		-I protos/includes/grpc_ecosystem \
-		--go_out=./app/core --go_opt=paths=source_relative \
-		--go-grpc_out=./app/core --go-grpc_opt=paths=source_relative \
+		--go_out=./app/core --go_opt=paths=import \
+		--go-grpc_out=./app/core --go-grpc_opt=paths=import \
+		--grpc-gateway_out=./app/core --grpc-gateway_opt=paths=import \
+		./protos/web/**/*.proto \
+	)
+
+gen.apbodyi.proto:
+	( protoc -I protos/web \
+		-I protos/includes/googleapis \
+		-I protos/includes/grpc_ecosystem \
+		--go_out=./app/core --go_opt=paths=import \
+		--go-grpc_out=./app/core --go-grpc_opt=paths=import \
 		./protos/web/**/*.proto \
 	)

@@ -13,3 +13,6 @@ var PkgFS embed.FS
 
 //go:embed templates/scripts/*
 var ScriptsFS embed.FS
+
+//go:embed templates/middlewares/*
+var MiddlewareFS embed.FS

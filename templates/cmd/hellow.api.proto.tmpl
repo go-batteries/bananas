@@ -1,0 +1,66 @@
+// out_path: protos/web/hellow/api.proto
+syntax = "proto3";
+
+package protos.web;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "hellow/protos";
+
+// message HellowBody { string name = 1; }
+// message HellowRequest { HellowBody body = 1; }
+
+message HellowRequest { string name = 1; }
+
+// HellowResponse represents the response for both POST and GET endpoints
+message HellowResponse {
+  bool success = 1;
+  string data = 2;
+  repeated string errors = 3;
+}
+
+// HellowGetRequest represents the request for the Hellow GET endpoint
+message HellowGetRequest { string name = 1; }
+
+service HellowService {
+  // PostHellow handles the POST /hellow endpoint
+  rpc PostHellow(HellowRequest) returns (HellowResponse) {
+    option (google.api.http) = {
+      post : "/hellow"
+      body : "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary : "Post a request body."
+      parameters : {
+        headers : {
+          name : "X-Request-ID"
+          description : "Unique request ID"
+          type : STRING
+          required : true
+        }
+      },
+      responses : {
+        key : "400"
+        value : {
+          description : "Bad Request - Invalid Input."
+          schema : {json_schema : {ref : "#/definitions/webHellowResponse"}}
+        }
+      }
+      responses : {
+        key : "500"
+        value : {
+          description : "Internal Server Error."
+          schema : {json_schema : {ref : "#/definitions/rpcStatus"}}
+        }
+      }
+    };
+  }
+
+  // GetHellow handles the GET /hellow?name=Name endpoint
+  rpc GetHellow(HellowGetRequest) returns (HellowResponse) {
+    option (google.api.http) = {
+      get : "/hellow"
+    };
+  }
+}

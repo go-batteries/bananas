@@ -29,26 +29,28 @@ var dirs = []string{
 	"migrations/mysql",
 	"migrations/postgres",
 	"config",
-	"protos/web",
+	"protos/web/hellow",
 	"openapiv2",
 	"scripts",
 }
 
 type appInitRunner struct {
-	dirs       []string
-	baseFS     embed.FS
-	databaseFS embed.FS
-	pkgFS      embed.FS
-	scriptFS   embed.FS
+	dirs         []string
+	baseFS       embed.FS
+	databaseFS   embed.FS
+	pkgFS        embed.FS
+	scriptFS     embed.FS
+	middlewareFS embed.FS
 }
 
 func NewInitAppCmd() *cobra.Command {
 	r := appInitRunner{
-		dirs:       dirs,
-		baseFS:     bananas.BaseFS,
-		databaseFS: bananas.DbFS,
-		pkgFS:      bananas.PkgFS,
-		scriptFS:   bananas.ScriptsFS,
+		dirs:         dirs,
+		baseFS:       bananas.BaseFS,
+		databaseFS:   bananas.DbFS,
+		pkgFS:        bananas.PkgFS,
+		scriptFS:     bananas.ScriptsFS,
+		middlewareFS: bananas.MiddlewareFS,
 	}
 
 	var initCmd = &cobra.Command{
@@ -56,11 +58,11 @@ func NewInitAppCmd() *cobra.Command {
 		Short: "Initialize a new Bananas application",
 		Run:   r.initApp,
 	}
-	initCmd.Flags().StringP(
-		"mode",
-		"m",
-		"http",
-		"Specify the mode (http or grpc)",
+	initCmd.Flags().BoolP(
+		"grpc",
+		"",
+		false,
+		"Turn on the flag to enable grpc gateway",
 	)
 
 	initCmd.Flags().StringP(
@@ -81,9 +83,9 @@ func getBinaryName(projectName string) string {
 }
 
 func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
-	mode, err := cmd.Flags().GetString("mode")
+	isgRPCMode, err := cmd.Flags().GetBool("grpc")
 	if err != nil {
-		log.Fatalf("mode is empty. %v\n", err)
+		isgRPCMode = false
 	}
 
 	appName, err := cmd.Flags().GetString("name")
@@ -96,8 +98,14 @@ func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
 		// Create the base directory structure
 		log.Println("creating directories..")
 
+		if isgRPCMode {
+			dirs = append(dirs, "cmd/server/grpcserve")
+		} else {
+			dirs = append(dirs, "cmd/server/httpserve")
+		}
+
 		for _, dir := range dirs {
-			log.Println(dir)
+			// log.Println(dir)
 			if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 				log.Fatalf("Error creating directory: %v\n", err)
 			}
@@ -110,7 +118,7 @@ func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
 		// Copy Templates and shit for base project
 		log.Println("setting up base project..")
 
-		r.copyTemplates(appName, mode)
+		r.copyTemplates(appName, isgRPCMode)
 
 		log.Println("setting up base done..")
 	}
@@ -123,7 +131,26 @@ func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	log.Printf("\nInitialized a new Bananas app %s in '%s' mode.\n", appName, mode)
+	log.Printf("\nInitialized a new Bananas app %s in grpc-mode: %v.\n", appName, isgRPCMode)
+
+	// Run go mod tidy
+	log.Println("import dependencies")
+
+	if err := Execute("go", "mod", "tidy"); err != nil {
+		log.Fatal("failed to run go mod tidy", err)
+	}
+
+	if isgRPCMode {
+		log.Println("bootstraping gprc stuff")
+
+		if err := Execute("bananas", "gen:structs", "--path=./protos/web", "--grpc"); err != nil {
+			log.Fatal("failed to generate proto bufs", err)
+		}
+
+		if err := Execute("bananas", "gen:docs", "--path=./protos/web"); err != nil {
+			log.Fatal("failed to generate openapi json spec", err)
+		}
+	}
 }
 
 type render struct {
@@ -132,22 +159,25 @@ type render struct {
 	fs           embed.FS
 }
 
-func (r appInitRunner) copyTemplates(projectName, mode string) {
+func (r appInitRunner) copyTemplates(projectName string, isgRPCMode bool) {
 	binaryName := getBinaryName(projectName)
+
+	commonData := bananas.TemplData{
+		"projectName": projectName,
+		"binaryName":  binaryName,
+		"isGrpcMode":  isgRPCMode,
+	}
 
 	renderers := map[string]render{
 		"server": {
 			tmplFilePath: "templates/cmd/server.go.tmpl",
-			data:         bananas.TemplData{"projectName": projectName},
+			data:         commonData,
 			fs:           r.baseFS,
 		},
 		"cli": {
 			tmplFilePath: "templates/cmd/cli.go.tmpl",
-			data: bananas.TemplData{
-				"projectName": projectName,
-				"binaryName":  binaryName,
-			},
-			fs: r.baseFS,
+			data:         commonData,
+			fs:           r.baseFS,
 		},
 		"tools": {
 			tmplFilePath: "templates/cmd/tools.go.tmpl",
@@ -156,6 +186,11 @@ func (r appInitRunner) copyTemplates(projectName, mode string) {
 		"app.env": {
 			tmplFilePath: "templates/cmd/app.env.tmpl",
 			fs:           r.baseFS,
+		},
+
+		"grpcmiddleware": {
+			tmplFilePath: "templates/middlewares/grpcrecovery.go.tmpl",
+			fs:           r.middlewareFS,
 		},
 
 		"config": {
@@ -196,6 +231,25 @@ func (r appInitRunner) copyTemplates(projectName, mode string) {
 			tmplFilePath: "templates/scripts/setup_apidocs.sh.tmpl",
 			fs:           r.scriptFS,
 		},
+
+		"proto": {
+			tmplFilePath: "templates/cmd/hellow.api.proto.tmpl",
+			fs:           r.baseFS,
+		},
+	}
+
+	if isgRPCMode {
+		renderers["protocolserver"] = render{
+			tmplFilePath: "templates/cmd/grpc.server.go.tmpl",
+			fs:           r.baseFS,
+			data:         commonData,
+		}
+	} else {
+		renderers["protocolserver"] = render{
+			tmplFilePath: "templates/cmd/http.server.go.tmpl",
+			fs:           r.baseFS,
+			data:         commonData,
+		}
 	}
 
 	for _, r := range renderers {
@@ -211,7 +265,7 @@ func (r appInitRunner) copyTemplates(projectName, mode string) {
 			data,
 		)
 		if ok {
-			log.Println(outPath)
+			// log.Println("template output path", outPath)
 			bananas.WriteFile(outPath, content)
 		}
 	}
@@ -325,6 +379,6 @@ func downloadFile(url, outputPath string) error {
 		return err
 	}
 
-	log.Printf("downloaded %s to %s\n", url, outputPath)
+	// log.Printf("downloaded %s to %s\n", url, outputPath)
 	return nil
 }

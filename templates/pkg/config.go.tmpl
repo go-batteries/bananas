@@ -14,6 +14,8 @@ type AppConfig struct {
 	Dsn         string
 	DbName      string
 	RedisURL    string
+	AppPort     string
+	GrpcPort    string
 }
 
 func Load(envFile string) AppConfig {
@@ -39,5 +41,7 @@ func Load(envFile string) AppConfig {
 		Dsn:         cfgMap.MustGet("dsn").(string),
 		DbName:      cfgMap.MustGet("db_name").(string),
 		RedisURL:    cfgMap.MustGet("redis_url").(string),
+		AppPort:     cfgMap.MustGet("app_port").(string),
+		GrpcPort:    cfgMap.MustGet("grpc_port").(string),
 	}
 }

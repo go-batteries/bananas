@@ -87,11 +87,10 @@ func (r genDocsRunner) buildArgs(protosPath string) []string {
 }
 
 func (r genDocsRunner) genAPIProto(protosPath string) error {
-	cmd := exec.Command("protoc", r.buildArgs(protosPath)...)
+	cliArgs := r.buildArgs(protosPath)
+	log.Println("protoc", strings.Join(cliArgs, " "))
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return Execute("protoc", cliArgs...)
 }
 
 func (r genDocsRunner) mergeSwaggerFiles(outFile string) error {
@@ -106,6 +105,14 @@ func (r genDocsRunner) mergeSwaggerFiles(outFile string) error {
 
 	// Join the files for swagger mixin
 	filesStr := strings.Join(files, " ")
+
+	if len(files) == 1 {
+		if err := exec.Command("cp", filesStr, outFile).Run(); err != nil {
+			return fmt.Errorf("failed to create output file: %v", err)
+		}
+
+		return nil
+	}
 
 	// Build the swagger mixin command
 	cmd := exec.Command("swagger", "mixin", filesStr)
