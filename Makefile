@@ -1,6 +1,11 @@
 build.cli:
-	go build -o out/linux/bananas cmd/cli/main.go
-	cp out/linux/bananas /home/darksied/.local/bin/
+	GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -o out/linux/bananas cmd/cli/main.go
+	GOOS=linux GOARCH=arm64 go build -ldflags "-s -w" -o out/linux/bananas_arm cmd/cli/main.go
+
+	GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w" -o out/darwin/bananas cmd/cli/main.go
+	GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w" -o out/darwin/bananas_amd cmd/cli/main.go
+
+	cp out/linux/bananas $(HOME)/.local/bin/
 
 gen.web.proto:
 	( protoc -I protos/web \
