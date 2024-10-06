@@ -42,6 +42,8 @@ $> bananas gen:docs
 
 # generate the pb.go files
 $> bananas gen:structs 
+
+$> go run cmd/server/main.go
 ```
 
 #### to enable grpc use
@@ -53,9 +55,19 @@ $> bananas init -n testproj --grpc
 
 $> bananas gen:structs --grpc
 $> bananas gen:docs
+
+$> go run cmd/server/main.go
 ```
 
 _N.B.: The `--path` flag for overriding protos/ directory is off. Will add that later_
+
+A default hello example has been provided.
+After running the server, test it with curl:
+
+```shell
+curl -XGET 'http://localhost:9001/hellow?name=DudePerfect'
+curl -XDELETE 'http://localhost:9001/hellow?name=DudePerfect'
+```
 
 ### building
 
