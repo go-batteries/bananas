@@ -17,7 +17,7 @@ func main() {
 	log.SetFlags(0)
 
 	rootCmd.AddCommand(cmd.NewInitAppCmd())
-	rootCmd.AddCommand(cmd.NewGenControllerCmd())
+	rootCmd.AddCommand(cmd.NewGenApiCmd())
 	rootCmd.AddCommand(cmd.NewGenDocsCmd())
 
 	if err := rootCmd.Execute(); err != nil {
@@ -25,4 +25,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-

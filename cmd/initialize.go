@@ -31,6 +31,7 @@ var dirs = []string{
 	"config",
 	"protos/web",
 	"openapiv2",
+	"scripts",
 }
 
 type appInitRunner struct {
@@ -38,6 +39,7 @@ type appInitRunner struct {
 	baseFS     embed.FS
 	databaseFS embed.FS
 	pkgFS      embed.FS
+	scriptFS   embed.FS
 }
 
 func NewInitAppCmd() *cobra.Command {
@@ -46,6 +48,7 @@ func NewInitAppCmd() *cobra.Command {
 		baseFS:     bananas.BaseFS,
 		databaseFS: bananas.DbFS,
 		pkgFS:      bananas.PkgFS,
+		scriptFS:   bananas.ScriptsFS,
 	}
 
 	var initCmd = &cobra.Command{
@@ -188,6 +191,11 @@ func (r appInitRunner) copyTemplates(projectName, mode string) {
 			tmplFilePath: "templates/databases/timestamper.go.tmpl",
 			fs:           r.databaseFS,
 		},
+
+		"scripts": {
+			tmplFilePath: "templates/scripts/setup_apidocs.sh.tmpl",
+			fs:           r.scriptFS,
+		},
 	}
 
 	for _, r := range renderers {
@@ -207,7 +215,6 @@ func (r appInitRunner) copyTemplates(projectName, mode string) {
 			bananas.WriteFile(outPath, content)
 		}
 	}
-
 }
 
 func (r appInitRunner) setupRequiredProtos() error {
@@ -261,6 +268,10 @@ func (r appInitRunner) setupRequiredProtos() error {
 			url:  "https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/protoc-gen-openapiv2/options/openapiv2.proto",
 			path: filepath.Join(grpcEcosystemDirRoot, "options/openapiv2.proto"),
 		},
+		{
+			url:  "https://raw.githubusercontent.com/googleapis/googleapis/refs/heads/master/google/api/field_behavior.proto",
+			path: filepath.Join(googleApiDirRoot, "google/api/field_behaviour.proto"),
+		},
 	}
 
 	var wg = sync.WaitGroup{}
@@ -272,7 +283,7 @@ func (r appInitRunner) setupRequiredProtos() error {
 
 			proto := protos[idx]
 
-			err := downloadProtoFile(proto.url, proto.path)
+			err := downloadFile(proto.url, proto.path)
 			if err != nil {
 				log.Println("failed to download protos from", proto.url)
 			}
@@ -280,40 +291,15 @@ func (r appInitRunner) setupRequiredProtos() error {
 	}
 
 	wg.Wait()
-	// err = downloadProtoFile("https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/http.proto", filepath.Join(googleApiDirRoot, "google/api/http.proto"))
+	// err = downloadFile("https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/http.proto", filepath.Join(googleApiDirRoot, "google/api/http.proto"))
 	// if err != nil {
 	// 	return err
 	// }
 	//
-	// err = downloadProtoFile("https://raw.githubusercontent.com/googleapis/googleapis/master/google/api/annotations.proto", filepath.Join(googleApiDirRoot, "google/api/annotations.proto"))
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = downloadProtoFile("https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf/descriptor.proto", filepath.Join(googleApiDirRoot, "google/protobuf/descriptor.proto"))
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = downloadProtoFile("https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf/struct.proto", filepath.Join(googleApiDirRoot, "google/protobuf/struct.proto"))
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = downloadProtoFile("https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/protoc-gen-openapiv2/options/annotations.proto", filepath.Join(grpcEcosystemDirRoot, "options/annotations.proto"))
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = downloadProtoFile("https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/protoc-gen-openapiv2/options/openapiv2.proto", filepath.Join(grpcEcosystemDirRoot, "options/openapiv2.proto"))
-	// if err != nil {
-	// 	return err
-	// }
-
 	return nil
 }
 
-func downloadProtoFile(url, outputPath string) error {
+func downloadFile(url, outputPath string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Fatalf("failed to download %s: %v", url, err)

@@ -74,6 +74,8 @@ func MustRenderTmpl(
 
 func WriteFile(filePath string, content *bytes.Buffer) error {
 	// Ensure the target directory exists
+	// log.Println("fpath", filePath, content.String())
+
 	dir := filepath.Dir(filePath)
 	if _, err := os.Stat(dir); err != nil {
 		log.Fatalf("error in setup, %s dir not created. reason: %v\n", dir, err)

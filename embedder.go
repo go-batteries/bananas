@@ -10,3 +10,6 @@ var DbFS embed.FS
 
 //go:embed templates/pkg/*
 var PkgFS embed.FS
+
+//go:embed templates/scripts/*
+var ScriptsFS embed.FS
