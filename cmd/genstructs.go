@@ -23,8 +23,8 @@ func NewGenApiCmd() *cobra.Command {
 	controllerCmd.Flags().StringP(
 		"path",
 		"p",
-		"protos/web",
-		"Path to protos directory",
+		"./protos/web",
+		"Immutable!! Path to proto definitions directory",
 	)
 
 	controllerCmd.Flags().BoolP(
@@ -37,16 +37,18 @@ func NewGenApiCmd() *cobra.Command {
 }
 
 func (r genApiRunner) generateApiCode(cmd *cobra.Command, args []string) {
-	path, err := cmd.Flags().GetString("path")
-	if err != nil {
-		cmd.Usage()
-		log.Fatalln("failed to get path from options. reason:", err)
-	}
+	// path, err := cmd.Flags().GetString("path")
+	// if err != nil {
+	// 	cmd.Usage()
+	// 	log.Fatalln("failed to get path from options. reason:", err)
+	// }
+	//
+	// if path == "" {
+	// 	cmd.Usage()
+	// 	log.Fatalln("path is required.")
+	// }
 
-	if path == "" {
-		cmd.Usage()
-		log.Fatalln("path is required.")
-	}
+	path := "./protos/web"
 
 	isgRPCMode, err := cmd.Flags().GetBool("grpc")
 	if err != nil {

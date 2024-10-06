@@ -72,6 +72,13 @@ func NewInitAppCmd() *cobra.Command {
 		"Specify the project name as per go.mod",
 	)
 
+	initCmd.Flags().StringP(
+		"protos_dir",
+		"",
+		"./protos/web",
+		"Immutable!!, defaults to ./protos/web",
+	)
+
 	return initCmd
 }
 

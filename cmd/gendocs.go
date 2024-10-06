@@ -31,7 +31,7 @@ func NewGenDocsCmd() *cobra.Command {
 		"path",
 		"p",
 		"protos/web",
-		"Generate docs for all proto definitions",
+		"Immutable!! Path to proto definitions directory",
 		// "Name of the controller for which to generate docs",
 	)
 
@@ -39,16 +39,17 @@ func NewGenDocsCmd() *cobra.Command {
 }
 
 func (r genDocsRunner) generateDocs(cmd *cobra.Command, args []string) {
-	path, err := cmd.Flags().GetString("path")
-	if err != nil {
-		cmd.Usage()
-		log.Fatalln("failed to get path from options. reason:", err)
-	}
+	// path, err := cmd.Flags().GetString("path")
+	// if err != nil {
+	// 	cmd.Usage()
+	// 	log.Fatalln("failed to get path from options. reason:", err)
+	// }
 
-	if path == "" {
-		cmd.Usage()
-		log.Fatalln("path is required.")
-	}
+	// if path == "" {
+	// 	cmd.Usage()
+	// 	log.Fatalln("path is required.")
+	// }
+	path := "./protos/web"
 
 	if err := r.genAPIProto(path); err != nil {
 		log.Fatalln("failed to generate swagger yamls. reason: ", err)
