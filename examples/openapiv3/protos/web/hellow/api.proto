@@ -1,4 +1,3 @@
-// out_path: protos/web/hellow/api.proto
 
 syntax = "proto3";
 

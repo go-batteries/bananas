@@ -1,0 +1,117 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: HellowService API
+    version: 0.0.1
+paths:
+    /hellow:
+        get:
+            tags:
+                - HellowService
+            summary: Get a hellow response
+            description: greets the user with provided name
+            operationId: HellowService_GetHellow
+            parameters:
+                - name: name
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/HellowResponse'
+                "400":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/HellowResponse'
+        post:
+            tags:
+                - HellowService
+            summary: Post a request body.
+            operationId: HellowService_PostHellow
+            parameters:
+                - name: X-Request-ID
+                  in: header
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/HellowRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/HellowResponse'
+                "400":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/HellowResponse'
+                "500":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/HellowResponse'
+        delete:
+            tags:
+                - HellowService
+            summary: Get a hellow response
+            description: bids farewell to user with provided name
+            operationId: HellowService_DeleteHellow
+            parameters:
+                - name: name
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/HellowResponse'
+                "400":
+                    description: Forbidden
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/HellowResponse'
+components:
+    schemas:
+        HellowRequest:
+            type: object
+            properties:
+                name:
+                    required:
+                        - "true"
+                    type: string
+            description: HellowRequest represents the request for the Hellow GET endpoint
+        HellowResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                data:
+                    type: string
+                errors:
+                    type: array
+                    items:
+                        type: string
+            description: HellowResponse represents the response for both POST and GET endpoints
+tags:
+    - name: HellowService

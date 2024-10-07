@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./out/Linux/bananas --help"
+  bin = "./out/bananas --help"
   cmd = "make build.cli"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "out", "releases", "examples"]

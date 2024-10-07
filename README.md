@@ -46,6 +46,13 @@ $> bananas gen:structs
 $> go run cmd/server/main.go
 ```
 
+__to use openapiv2__
+
+```shell
+
+$> bananas init -n testproj -ov 2
+```
+
 __to enable grpc use__
 
 ```shell

@@ -1,4 +1,4 @@
-OUT_DIR=out/$(shell uname)
+OUT_DIR=out
 
 build.cli:
 	go build -ldflags "-s -w" -o $(OUT_DIR)/bananas cmd/cli/main.go

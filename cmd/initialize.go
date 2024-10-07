@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"embed"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -43,6 +44,8 @@ type appInitRunner struct {
 	middlewareFS embed.FS
 }
 
+const DefaultOpenAPIVersion int = 3
+
 func NewInitAppCmd() *cobra.Command {
 	r := appInitRunner{
 		dirs:         dirs,
@@ -70,6 +73,13 @@ func NewInitAppCmd() *cobra.Command {
 		"n",
 		"",
 		"Specify the project name as per go.mod",
+	)
+
+	initCmd.Flags().IntP(
+		"oa-version",
+		"",
+		DefaultOpenAPIVersion,
+		"Specify the openapi version (2 or 3)",
 	)
 
 	initCmd.Flags().StringP(
@@ -101,6 +111,17 @@ func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
 		log.Fatal("\napp name not provided.")
 	}
 
+	openApiVersion, err := cmd.Flags().GetInt("oa-version")
+	if err != nil {
+		openApiVersion = DefaultOpenAPIVersion
+	}
+
+	if openApiVersion > 3 || openApiVersion < 2 {
+		openApiVersion = DefaultOpenAPIVersion
+	}
+
+	log.Println("Using OpenAPI version", openApiVersion)
+
 	{
 		// Create the base directory structure
 		log.Println("creating directories..")
@@ -125,7 +146,7 @@ func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
 		// Copy Templates and shit for base project
 		log.Println("setting up base project..")
 
-		r.copyTemplates(appName, isgRPCMode)
+		r.copyTemplates(appName, isgRPCMode, openApiVersion)
 
 		log.Println("setting up base done..")
 	}
@@ -163,7 +184,7 @@ func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		if err := Execute("bananas", "gen:docs", "--path=./protos/web"); err != nil {
+		if err := Execute("bananas", "gen:docs", "--path=./protos/web", fmt.Sprintf("--oa-version=%d", openApiVersion)); err != nil {
 			log.Fatal("failed to generate openapi json spec", err)
 		}
 	}
@@ -177,7 +198,7 @@ type render struct {
 	fs           embed.FS
 }
 
-func (r appInitRunner) copyTemplates(projectName string, isgRPCMode bool) {
+func (r appInitRunner) copyTemplates(projectName string, isgRPCMode bool, openApiVersion int) {
 	binaryName := getBinaryName(projectName)
 
 	commonData := bananas.TemplData{
@@ -251,8 +272,13 @@ func (r appInitRunner) copyTemplates(projectName string, isgRPCMode bool) {
 		},
 
 		"proto": {
-			tmplFilePath: "templates/cmd/hellow.api.proto.tmpl",
+			tmplFilePath: "templates/cmd/hellow.api.v3.proto.tmpl",
 			fs:           r.baseFS,
+		},
+		"protoserver": {
+			tmplFilePath: "templates/cmd/http.server.go.tmpl",
+			fs:           r.baseFS,
+			data:         commonData,
 		},
 	}
 
@@ -262,11 +288,12 @@ func (r appInitRunner) copyTemplates(projectName string, isgRPCMode bool) {
 			fs:           r.baseFS,
 			data:         commonData,
 		}
-	} else {
-		renderers["protocolserver"] = render{
-			tmplFilePath: "templates/cmd/http.server.go.tmpl",
+	}
+
+	if openApiVersion == 2 {
+		renderers["proto"] = render{
+			tmplFilePath: "templates/cmd/hellow.api.proto.tmpl",
 			fs:           r.baseFS,
-			data:         commonData,
 		}
 	}
 
