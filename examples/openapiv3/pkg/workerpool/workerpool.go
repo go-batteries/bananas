@@ -1,0 +1,182 @@
+package workerpool
+
+import (
+	"context"
+	"log"
+	"sync"
+)
+
+type Result struct {
+	Err  error
+	Data any
+}
+
+type ProcessorFunc[E, V any] func(context.Context, E) V
+
+// Make a worker pool which receives a channel of
+// channel
+type WorkerPool[E any, V any] struct {
+	Pool      chan chan E
+	Workers   []*Worker[E, V]
+	ResultChs []chan V
+}
+
+func NewWorkerPool[E, V any](poolSize int64, processorFunc ProcessorFunc[E, V], captureResult bool) *WorkerPool[E, V] {
+
+	pool := &WorkerPool[E, V]{
+		Pool:      make(chan chan E, poolSize),
+		ResultChs: []chan V{},
+	}
+
+	workers := []*Worker[E, V]{}
+
+	for i := 0; i < int(poolSize); i++ {
+		workers = append(workers, &Worker[E, V]{
+			ID:            i + 1,
+			Bench:         make(chan E, 1), //Job Chan
+			Processor:     processorFunc,   // Worker ProcessorFunc
+			Quit:          make(chan bool),
+			captureResult: captureResult,
+		})
+	}
+
+	pool.Workers = workers
+
+	for i := range workers {
+		worker := workers[i]
+		worker.WorkerPool = pool
+	}
+
+	return pool
+}
+
+// The job of the dispatcher is to recieve an event on a channel
+// This is an external channel. As in not managed by the worker pool
+
+// recieveChan This is the souce of the data.
+// Then it waits to receive a job channel from the workers
+// Then passes on the job in the job channel for the worker
+// At a time, there can be N workers, some of which will be free
+// Some in processing
+// Once the processing completes, The Worker sends back the job channel
+// to the Pool, indicating that it can do work
+func Dispatch[E, V any](ctx context.Context, pool *WorkerPool[E, V], receiveCh chan E, doSync bool) {
+	for {
+		select {
+		case job := <-receiveCh:
+			if doSync {
+				jobChan := <-pool.Pool
+				jobChan <- job
+			} else {
+				go func() {
+					jobChan := <-pool.Pool
+					jobChan <- job
+				}()
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (wp *WorkerPool[E, V]) Stop(ctx context.Context) {
+	for _, worker := range wp.Workers {
+		worker.Stop()
+	}
+}
+
+func (wp *WorkerPool[E, V]) Start(ctx context.Context) {
+	if len(wp.Workers) == 0 {
+		return
+	}
+
+	resultChs := []chan V{}
+
+	for _, worker := range wp.Workers {
+		resultChs = append(resultChs, worker.Start(ctx))
+	}
+
+	wp.ResultChs = resultChs
+}
+
+func Merge[V any](ctx context.Context, chans []chan V, out chan<- V) {
+	if len(chans) == 0 {
+		return
+	}
+
+	var wg sync.WaitGroup
+
+	for _, ch := range chans {
+		wg.Add(1)
+		go func(c chan V) {
+			defer wg.Done()
+			for v := range c {
+				select {
+				case out <- v:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}(ch)
+	}
+
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+}
+
+type Worker[E, V any] struct {
+	ID            int
+	WorkerPool    *WorkerPool[E, V]
+	Bench         chan E // Job channel
+	Processor     ProcessorFunc[E, V]
+	Quit          chan bool
+	captureResult bool
+}
+
+func (w *Worker[E, V]) Start(ctx context.Context) chan V {
+	resultCh := make(chan V, 1)
+
+	go func() {
+		defer close(resultCh)
+
+		for {
+			// Here since, the Job Channel is of length 1
+			// So, after each iteration, the buffered Q becomes empty
+			// So we put it Back
+			w.WorkerPool.Pool <- w.Bench
+
+			select {
+
+			case job := <-w.Bench:
+				// log.Printf("worker:%d", w.ID)
+				result := w.Processor(ctx, job)
+				if !w.captureResult {
+					continue
+				}
+
+				select {
+				case resultCh <- result:
+					// log.Println("sending result", result)
+				case <-ctx.Done():
+					return
+				}
+
+			case <-w.Quit:
+				log.Println("quiting")
+				return
+			case <-ctx.Done():
+				return
+
+			}
+		}
+
+	}()
+
+	return resultCh
+}
+
+func (w *Worker[E, V]) Stop() {
+	w.Quit <- true
+}

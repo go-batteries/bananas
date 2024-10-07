@@ -1,4 +1,4 @@
-OUT_DIR=out/$(shell uname)
+OUT_DIR=out
 
 build.cli:
 	go build -ldflags "-s -w" -o $(OUT_DIR)/bananas cmd/cli/main.go
@@ -12,6 +12,7 @@ build.all:
 	GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w" -o tmp/darwin/amd/bananas cmd/cli/main.go
 
 zip:
+	mkdir -p releases
 	zip releases/bananas.linux_amd64.zip tmp/linux/bananas
 	zip releases/bananas.darwin_amd64.zip tmp/darwin/amd/bananas
 	zip releases/bananas.darwin_arm64.zip tmp/darwin/bananas

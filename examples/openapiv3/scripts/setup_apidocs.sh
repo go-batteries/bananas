@@ -1,4 +1,3 @@
-// out_path:./scripts/setup_apidocs.sh
 
 #!/bin/bash
 #

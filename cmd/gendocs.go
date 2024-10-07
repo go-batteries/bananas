@@ -35,6 +35,13 @@ func NewGenDocsCmd() *cobra.Command {
 		// "Name of the controller for which to generate docs",
 	)
 
+	docsCmd.Flags().IntP(
+		"oa-version",
+		"",
+		3,
+		"Select the openapi version to use. (2 or 3)",
+	)
+
 	return docsCmd
 }
 
@@ -51,8 +58,24 @@ func (r genDocsRunner) generateDocs(cmd *cobra.Command, args []string) {
 	// }
 	path := "./protos/web"
 
-	if err := r.genAPIProto(path); err != nil {
+	openApiVersion, err := cmd.Flags().GetInt("oa-version")
+	if err != nil {
+		openApiVersion = DefaultOpenAPIVersion
+	}
+
+	if openApiVersion > DefaultOpenAPIVersion || openApiVersion < 2 {
+		openApiVersion = DefaultOpenAPIVersion
+	}
+
+	log.Println("Using OpenAPI version", openApiVersion)
+
+	if err := r.genAPIProto(path, openApiVersion); err != nil {
 		log.Fatalln("failed to generate swagger yamls. reason: ", err)
+	}
+
+	if openApiVersion == 3 {
+		log.Println("skipping merge for openapi v", openApiVersion, "since its already merged")
+		return
 	}
 
 	if err := r.mergeSwaggerFiles(_outFile); err != nil {
@@ -62,7 +85,7 @@ func (r genDocsRunner) generateDocs(cmd *cobra.Command, args []string) {
 	log.Println("combined swagger generated at", _outFile)
 }
 
-func (r genDocsRunner) buildArgs(protosPath string) []string {
+func (r genDocsRunner) buildArgs(protosPath string, openApiVersion int) []string {
 	protoFiles, err := filepath.Glob(fmt.Sprintf("%s/**/*.proto", protosPath))
 	if err != nil {
 		log.Println("failed to find .proto files. reason:", err)
@@ -74,12 +97,19 @@ func (r genDocsRunner) buildArgs(protosPath string) []string {
 	}
 
 	// Build the protoc command with all .proto files
-	args := []string{
-		"-I", protosPath,
-		"-I", "protos/includes/googleapis",
-		"-I", "protos/includes/grpc_ecosystem",
-		"--openapiv2_out", "./openapiv2",
-		"--openapiv2_opt", "logtostderr=true",
+	args := []string{"-I", protosPath}
+
+	args = append(args, DefaultProtocArgs...)
+
+	if openApiVersion == 2 {
+		args = append(args,
+			"--openapiv2_out", "./openapiv2",
+			"--openapiv2_opt", "logtostderr=true",
+		)
+	} else {
+		args = append(args,
+			"--openapi_out=default_response=false:./openapiv2",
+		)
 	}
 
 	// Append all the .proto files found by the glob
@@ -87,8 +117,8 @@ func (r genDocsRunner) buildArgs(protosPath string) []string {
 	return args
 }
 
-func (r genDocsRunner) genAPIProto(protosPath string) error {
-	cliArgs := r.buildArgs(protosPath)
+func (r genDocsRunner) genAPIProto(protosPath string, openApiVersion int) error {
+	cliArgs := r.buildArgs(protosPath, openApiVersion)
 	log.Println("protoc", strings.Join(cliArgs, " "))
 
 	return Execute("protoc", cliArgs...)

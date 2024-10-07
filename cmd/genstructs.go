@@ -96,14 +96,15 @@ func (r genApiRunner) buildArgs(protosPath string, overrideOutPath string, isgRP
 	if err != nil {
 		log.Fatal("failed to find directory, init first")
 	}
+
 	// Build the protoc command with all .proto files
-	args := []string{
-		"-I", protosPath,
-		"-I", "protos/includes/googleapis",
-		"-I", "protos/includes/grpc_ecosystem",
+	args := []string{"-I", protosPath}
+
+	args = append(args, DefaultProtocArgs...)
+	args = append(args,
 		fmt.Sprintf("--go_out=%s", outPath), "--go_opt=paths=import",
 		fmt.Sprintf("--go-grpc_out=%s", outPath), "--go-grpc_opt=paths=import",
-	}
+	)
 
 	if isgRPCMode {
 		args = append(args,

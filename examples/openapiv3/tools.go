@@ -1,4 +1,3 @@
-// out_path:./tools.go
 // +build tools
 
 package tools

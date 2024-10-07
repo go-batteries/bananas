@@ -1,0 +1,140 @@
+// out_path: protos/web/hellow/api.proto
+
+syntax = "proto3";
+
+package protos.web;
+
+import "google/api/annotations.proto";
+import "openapiv3/annotations.proto";
+
+option go_package = "hellow/protos";
+
+// message HellowBody { string name = 1; }
+// message HellowRequest { HellowBody body = 1; }
+
+// HellowResponse represents the response for both POST and GET endpoints
+message HellowResponse {
+  bool success = 1 [ (openapi.v3.property) = {type : "boolean"} ];
+  string data = 2 [ (openapi.v3.property) = {type : "string"} ];
+  repeated string errors = 3 [ (openapi.v3.property) = {
+    type : "array",
+  } ];
+}
+
+// HellowRequest represents the request for the Hellow GET endpoint
+message HellowRequest {
+  string name = 1 [ (openapi.v3.property) = {type : "string", required: "true"} ];
+}
+
+service HellowService {
+  // Example post api, to greet the user with provided name
+
+  rpc PostHellow(HellowRequest) returns (HellowResponse) {
+    option (google.api.http) = {
+      post : "/hellow"
+      body : "*"
+    };
+    option (openapi.v3.operation) = {
+      summary : "Post a request body."
+      parameters : {
+        parameter: {
+          name: "X-Request-ID"
+          in: "header"
+          required: true
+          schema: { schema: {type: "string" }}
+        }
+      }
+      responses : {
+        response_or_reference : {
+          name: "400",
+          value: {
+            response {
+              description: "Forbidden"
+              content: {
+                additional_properties: [
+                  {
+                    name: "application/json"
+                    value: { schema: { reference: {_ref: '#/components/schemas/HellowResponse'} } }
+                  }
+                ]
+              }
+            }
+          }
+        }
+        response_or_reference : {
+          name: "500",
+          value: {
+            response {
+              description: "Forbidden"
+              content: {
+                additional_properties: [
+                  {
+                    name: "application/json"
+                    value: { schema: { reference: {_ref: '#/components/schemas/HellowResponse'} } }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    };
+  };
+
+  // greets the user with provided name
+  rpc GetHellow(HellowRequest) returns (HellowResponse) {
+    option (google.api.http) = {
+      get : "/hellow"
+    };
+    option (openapi.v3.operation) = {
+      summary : "Get a hellow response"
+      responses : {
+        response_or_reference : {
+          name: "400",
+          value: {
+            response {
+              description: "Forbidden"
+              content: {
+                additional_properties: [
+                  {
+                    name: "application/json"
+                    value: { schema: { reference: {_ref: '#/components/schemas/HellowResponse'} } }
+                  }
+                ]
+              }
+            }
+          }
+        } 
+      }
+    };
+  };
+
+  // bids farewell to user with provided name
+  rpc DeleteHellow(HellowRequest) returns (HellowResponse) {
+    option (google.api.http) = {
+      delete : "/hellow"
+    };
+    option (openapi.v3.operation) = {
+      summary : "Get a hellow response"
+      responses : {
+        response_or_reference : {
+          name: "400",
+          value: {
+            response {
+              description: "Forbidden"
+              content: {
+                additional_properties: [
+                  {
+                    name: "application/json"
+                    value: { schema: { reference: {_ref: '#/components/schemas/HellowResponse'} } }
+                  }
+                ]
+              }
+            }
+          }
+        } 
+      }
+    };
+  };
+}
+

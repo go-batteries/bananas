@@ -13,3 +13,9 @@ func Execute(name string, args ...string) error {
 
 	return c.Run()
 }
+
+var DefaultProtocArgs = []string{
+	"-I", "protos/includes/googleapis",
+	"-I", "protos/includes/grpc_ecosystem",
+	"-I", "protos/includes/gnostic",
+}
