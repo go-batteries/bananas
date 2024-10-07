@@ -74,14 +74,13 @@ func (r genDocsRunner) buildArgs(protosPath string) []string {
 	}
 
 	// Build the protoc command with all .proto files
-	args := []string{
-		"-I", protosPath,
-		"-I", "protos/includes/googleapis",
-		"-I", "protos/includes/grpc_ecosystem",
+	args := []string{"-I", protosPath}
+
+	args = append(args, DefaultProtocArgs...)
+	args = append(args,
 		"--openapiv2_out", "./openapiv2",
 		"--openapiv2_opt", "logtostderr=true",
-	}
-
+	)
 	// Append all the .proto files found by the glob
 	args = append(args, protoFiles...)
 	return args

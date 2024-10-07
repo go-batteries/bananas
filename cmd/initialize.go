@@ -147,16 +147,25 @@ func (r appInitRunner) initApp(cmd *cobra.Command, args []string) {
 		log.Fatal("failed to run go mod tidy", err)
 	}
 
-	if isgRPCMode {
-		log.Println("bootstraping gprc stuff")
+	log.Println("installing necessary golang executables")
 
-		if err := Execute("bananas", "gen:structs", "--path=./protos/web", "--grpc"); err != nil {
-			log.Fatal("failed to generate proto bufs", err)
-		}
+	if err := Execute("bash", "./scripts/setup_apidocs.sh"); err != nil {
+		log.Println("Failed to install necessary executables. Reason", err)
+		log.Println("Please manually check, ./scripts/setup_apidocs.sh")
 	}
 
-	if err := Execute("bananas", "gen:docs", "--path=./protos/web"); err != nil {
-		log.Fatal("failed to generate openapi json spec", err)
+	{ // Bootstrap initial doc gen for hellow example
+		if isgRPCMode {
+			log.Println("bootstraping gprc stuff")
+
+			if err := Execute("bananas", "gen:structs", "--path=./protos/web", "--grpc"); err != nil {
+				log.Fatal("failed to generate proto bufs", err)
+			}
+		}
+
+		if err := Execute("bananas", "gen:docs", "--path=./protos/web"); err != nil {
+			log.Fatal("failed to generate openapi json spec", err)
+		}
 	}
 
 	log.Printf("\nInitialized a new Bananas app %s.\n", appName)
@@ -283,19 +292,21 @@ func (r appInitRunner) copyTemplates(projectName string, isgRPCMode bool) {
 func (r appInitRunner) setupRequiredProtos() error {
 	googleApiDirRoot := "protos/includes/googleapis"
 	grpcEcosystemDirRoot := "protos/includes/grpc_ecosystem/protoc-gen-openapiv2"
+	gnosticDirRoot := "protos/includes/gnostic"
 
 	// Create directories
-	err := os.MkdirAll(filepath.Join(googleApiDirRoot, "google/api"), os.ModePerm)
-	if err != nil {
-		return err
+	protosDirs := []string{
+		filepath.Join(googleApiDirRoot, "google/api"),
+		filepath.Join(googleApiDirRoot, "google/protobuf"),
+		filepath.Join(grpcEcosystemDirRoot, "options"),
+		filepath.Join(gnosticDirRoot, "openapiv3"),
 	}
-	err = os.MkdirAll(filepath.Join(googleApiDirRoot, "google/protobuf"), os.ModePerm)
-	if err != nil {
-		return err
-	}
-	err = os.MkdirAll(filepath.Join(grpcEcosystemDirRoot, "options"), os.ModePerm)
-	if err != nil {
-		return err
+
+	for _, path := range protosDirs {
+		err := os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Download proto files using HTTP
@@ -316,6 +327,10 @@ func (r appInitRunner) setupRequiredProtos() error {
 			path: filepath.Join(googleApiDirRoot, "google/protobuf/descriptor.proto"),
 		},
 		{
+			url:  "https://raw.githubusercontent.com/protocolbuffers/protobuf/refs/heads/main/src/google/protobuf/any.proto",
+			path: filepath.Join(googleApiDirRoot, "google/protobuf/any.proto"),
+		},
+		{
 			url:  "https://raw.githubusercontent.com/protocolbuffers/protobuf/refs/heads/main/src/google/protobuf/empty.proto",
 			path: filepath.Join(googleApiDirRoot, "google/protobuf/empty.proto"),
 		},
@@ -334,6 +349,14 @@ func (r appInitRunner) setupRequiredProtos() error {
 		{
 			url:  "https://raw.githubusercontent.com/googleapis/googleapis/refs/heads/master/google/api/field_behavior.proto",
 			path: filepath.Join(googleApiDirRoot, "google/api/field_behaviour.proto"),
+		},
+		{
+			"https://raw.githubusercontent.com/google/gnostic/refs/heads/main/openapiv3/OpenAPIv3.proto",
+			filepath.Join(gnosticDirRoot, "openapiv3/OpenAPIv3.proto"),
+		},
+		{
+			"https://raw.githubusercontent.com/google/gnostic/refs/heads/main/openapiv3/annotations.proto",
+			filepath.Join(gnosticDirRoot, "openapiv3/annotations.proto"),
 		},
 	}
 

@@ -1,0 +1,64 @@
+// out_path: protos/web/hellow/api.proto
+syntax = "proto3";
+
+package protos.web;
+
+import "google/api/annotations.proto";
+import "openapiv3/annotations.proto";
+
+option go_package = "hellow/protos";
+
+// message HellowBody { string name = 1; }
+// message HellowRequest { HellowBody body = 1; }
+
+message HellowRequest {
+  string name = 1 [ (openapi.v3.property) = {type : "string"} ];
+}
+
+// HellowResponse represents the response for both POST and GET endpoints
+message HellowResponse {
+  bool success = 1 [ (openapi.v3.property) = {type : "boolean"} ];
+  string data = 2 [ (openapi.v3.property) = {type : "string"} ];
+  repeated string errors = 3 [ (openapi.v3.property) = {
+    type : "array",
+  } ];
+}
+// message HellowRequest { string name = 1; }
+//
+// // HellowResponse represents the response for both POST and GET endpoints
+// message HellowResponse {
+//   bool success = 1;
+//   string data = 2;
+//   repeated string errors = 3;
+// }
+
+// HellowGetRequest represents the request for the Hellow GET endpoint
+message HellowGetRequest {
+  string name = 1 [ (openapi.v3.property) = {type : "string"} ];
+}
+
+service HellowService {
+  // GetHellow handles the GET /hellow?name=Name endpoint
+  rpc GetHellow(HellowGetRequest) returns (HellowResponse) {
+    option (google.api.http) = {
+      get : "/hellow"
+    };
+    option (openapi.v3.operation) = {
+      summary : "Get a hellow response"
+      parameters : [ {
+        parameter : {
+          name : "name"
+          in : "query"
+          required : true,
+        }
+      } ],
+      responses : {
+        response_or_reference : [ {
+          name : "400",
+          value : {reference : {_ref : ""}}
+        } ]
+      }
+    };
+  }
+}
+
