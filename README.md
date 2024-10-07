@@ -1,6 +1,6 @@
 # bananas
 
-![logo](./logo.jpg)
+<img src="./logo.jpg" alt="bananas logo" style="width:320px;height:320px" />
 
 or maybe I should have called it `go-bananas`. This is a cli tool to setup an
 opinionated golang base project.
