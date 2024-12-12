@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package protos.web;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "hellow/{{.domain}}";
+
+/*
+*
+* Sample Structure *
+
+message Request {
+	string email = 1;
+}
+
+message Response {
+	bool success = 1;
+	string data = 2;
+	repeated string errors = 3;
+}
+
+service HellowService {
+
+  // PostHellow handles the POST /hellow endpoint
+  rpc PostHellow(Request) returns (Response) {
+    option (google.api.http) = {
+      post : "/hellow"
+      body : "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary : "Post a request body."
+      parameters : {
+        headers : {
+          name : "X-Request-ID"
+          description : "Unique request ID"
+          type : STRING
+          required : true
+        }
+      },
+      responses : {
+        key : "400"
+        value : {
+          description : "Bad Request - Invalid Input."
+          schema : {json_schema : {ref : "#/definitions/webResponse"}}
+        }
+      }
+      responses : {
+        key : "500"
+        value : {
+          description : "Internal Server Error."
+          schema : {json_schema : {ref : "#/definitions/rpcStatus"}}
+        }
+      }
+    };
+  }
+
+  // Ping handles the GET /ping
+  rpc Ping() returns (string) {
+    option (google.api.http) = {
+	  summary: "Health check API"
+      get : "/ping",
+    };
+  }
+}
+
+*
+*/
+
+

@@ -365,6 +365,10 @@ func (r appInitRunner) setupRequiredProtos() error {
 			url:  "https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf/struct.proto",
 			path: filepath.Join(googleApiDirRoot, "google/protobuf/struct.proto"),
 		},
+			{
+			url:  "https://raw.githubusercontent.com/protocolbuffers/protobuf/main/src/google/protobuf/timestamp.proto",
+			path: filepath.Join(googleApiDirRoot, "google/protobuf/timestamp.proto"),
+		},
 		{
 			url:  "https://raw.githubusercontent.com/grpc-ecosystem/grpc-gateway/main/protoc-gen-openapiv2/options/annotations.proto",
 			path: filepath.Join(grpcEcosystemDirRoot, "options/annotations.proto"),
