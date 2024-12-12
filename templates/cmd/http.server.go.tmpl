@@ -73,11 +73,10 @@ func (app *EchoServer) StartHTTPServer(ctx context.Context, cfg *config.AppConfi
 		}
 	}()
 
-	appCtx := context.Background()
-	ctx, stop := signal.NotifyContext(appCtx, os.Interrupt)
+	appCtx, stop := signal.NotifyContext(ctx, os.Interrupt)
 	defer stop()
 
-	<-ctx.Done()
+	<-appCtx.Done()
 
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Error().Err(err).Msg("error during server shutdown")
